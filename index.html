@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リアルタイム津波情報</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="favicon.ico">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      display: none;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .watch {
+      background-color: #F9F551;
+    }
+    .warning {
+      background-color: #EA4225;
+    }
+    .big-warning {
+      background-color: #B626F6;
+    }
+    .error-message {
+      color: red;
+      font-size: 18px;
+      margin-top: 20px;
+      display: none;
+    }
+    #clock {
+      font-size: 20px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>リアルタイム津波情報</h1>
+  <div id="clock"></div>
+  <table id="tsunami-table">
+    <thead>
+      <tr>
+        <th>地域名</th>
+        <th>種別</th>
+        <th>最大津波高さ</th>
+        <th>状況</th>
+        <th>発表元</th>
+        <th>発表時刻</th>
+      </tr>
+    </thead>
+    <tbody id="tsunami-data"></tbody>
+  </table>
+  <div id="error-message" class="error-message">
+    大津波警報・津波警報・津波注意報は発表されていません
+  </div>
+  <script>
+    const apiUrl = "https://api.p2pquake.net/v2/history?codes=552&limit=1";
+
+    function updateClock() {
+      const now = new Date();
+      const timeString = `${now.getFullYear()}年${String(now.getMonth() + 1).padStart(2, '0')}月${String(now.getDate()).padStart(2, '0')}日 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      document.getElementById("clock").textContent = timeString;
+    }
+
+    function fetchAndDisplayData() {
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.getElementById("tsunami-data");
+          const errorMessage = document.getElementById("error-message");
+          const table = document.getElementById("tsunami-table");
+
+          tbody.innerHTML = "";
+          errorMessage.style.display = "none";
+          table.style.display = "none";
+
+          const allAreas = [];
+
+          data.forEach(event => {
+            event.areas.forEach(area => {
+              allAreas.push({
+                name: area.name,
+                grade: area.grade,
+                maxHeight: area.maxHeight?.value || 0,
+                description: area.maxHeight?.description || "不明",
+                condition: area.firstHeight?.condition || "不明",
+                source: event.issue.source || "不明",
+                time: event.issue.time || "不明"
+              });
+            });
+          });
+
+          if (allAreas.length === 0) {
+            errorMessage.style.display = "block";
+            return;
+          }
+
+          table.style.display = "table";
+          allAreas.sort((a, b) => b.maxHeight - a.maxHeight).forEach(area => {
+            const row = document.createElement("tr");
+            row.className = 
+              area.grade === "Watch" ? "watch" :
+              area.grade === "Warning" ? "warning" : 
+              area.grade === "BigWarning" ? "big-warning" : "";
+            row.innerHTML = `
+              <td>${area.name}</td>
+              <td>${area.grade === "Watch" ? "津波注意報" : area.grade === "Warning" ? "津波警報" : "大津波警報"}</td>
+              <td>${area.description}</td>
+              <td>${area.condition}</td>
+              <td>${area.source}</td>
+              <td>${area.time}</td>`;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error("データ取得エラー:", error);
+        });
+    }
+
+    updateClock();
+    fetchAndDisplayData();
+    setInterval(() => {
+      updateClock();
+      fetchAndDisplayData();
+    }, 1000);
+  </script>
+</body>
+</html>
