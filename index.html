@@ -26,7 +26,7 @@
     .warning {
       background-color: #EA4225;
     }
-    .big-warning {
+    .major-warning {
       background-color: #B626F6;
     }
     .error-message {
@@ -109,10 +109,10 @@
             row.className = 
               area.grade === "Watch" ? "watch" :
               area.grade === "Warning" ? "warning" : 
-              area.grade === "BigWarning" ? "big-warning" : "";
+              area.grade === "MajorWarning" ? "major-warning" : "";
             row.innerHTML = `
               <td>${area.name}</td>
-              <td>${area.grade === "Watch" ? "津波注意報" : area.grade === "Warning" ? "津波警報" : "大津波警報"}</td>
+              <td>${area.grade === "Watch" ? "津波注意報" : area.grade === "Warning" ? "津波警報" : area.grade === "MajorWarning" ? "大津波警報" : "不明"}</td>
               <td>${area.description}</td>
               <td>${area.condition}</td>
               <td>${area.source}</td>
